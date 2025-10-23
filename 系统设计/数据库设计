@@ -1,0 +1,318 @@
+A. PostgreSQL（主关系型存储）
+
+1. chain_blocks — 区块信息表
+中文名：区块信息表
+职责：存储每条链上区块的元信息与原始JSON，用于区块级查询与链一致性检查
+
+字段清单：
+id — 自增主键 — BIGSERIAL — 内部主键
+chain — 链类型 — VARCHAR(32) — chain标识（ethereum/polygon）
+block_number — 区块高度 — BIGINT — 区块高度
+block_hash — 区块哈希 — VARCHAR(66) — 唯一（0x前缀）
+parent_hash — 父区块哈希 — VARCHAR(66)
+timestamp — 区块时间 — TIMESTAMPTZ — 区块打包时间（UTC）
+tx_count — 交易数量 — INT
+gas_used — gas已用 — NUMERIC
+miner — 出块地址 — VARCHAR(42)
+raw — 原始RPC JSON — JSONB
+processed_at — 写入时间 — TIMESTAMPTZ DEFAULT now()
+confirmed — 确认标志 — BOOLEAN DEFAULT false — 达到确认数后设true
+extra — 扩展字段 — JSONB 可放策略或链特有字段
+
+索引/约束：
+UNIQUE(chain, block_hash)
+索引：(chain, block_number DESC)、(chain, timestamp DESC)
+
+补充说明：
+若高写入，create_hypertable('web3.chain_blocks', 'timestamp')或按block_number分区（按月/按链）
+用于快速定位区块、重组检测（使用parent_hash和block_number）、统计每分钟块数
+
+2. chain_transactions — 交易信息表
+中文名：交易信息表
+职责：保存交易基础信息与原始payload，支持tx查询与按地址检索
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+tx_hash — 交易哈希 — VARCHAR(66) 唯一
+block_hash — 区块哈希 — VARCHAR(66)
+block_number — 区块高度 — BIGINT
+tx_index — 交易索引 — INT — 交易在区块中的index
+from_address — 发送地址 — VARCHAR(42)
+to_address — 接收地址 — VARCHAR(42)
+value — 交易值 — NUMERIC — wei
+value_decimal — 十进制值 — NUMERIC — 人可读（转换）
+gas — Gas用量 — BIGINT
+gas_price — Gas价格 — NUMERIC
+nonce — 随机数 — BIGINT
+input — 输入数据 — TEXT — data
+status — 状态 — VARCHAR(32) — pending/confirmed/failed
+raw — 原始数据 — JSONB — RPC原始交易对象
+created_at — 创建时间 — TIMESTAMPTZ DEFAULT now()
+
+索引/约束：
+唯一索引：tx_hash
+索引：(chain, from_address)、(chain, to_address)、(chain, block_number)
+
+补充说明：
+经常查询from_address/to_address的话考虑materialized view或ES次级索引
+插入使用ON CONFLICT (tx_hash) DO UPDATE SET ... 保证幂等
+
+3. token_transfers — 代币转账表（解码后事件）
+中文名：代币转账表
+职责：保存经ABI解码得到的转账/转让类事件（ERC20/721/1155），为余额计算、ERC查询提供结构化数据
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+tx_hash — 交易哈希 — VARCHAR(66)
+block_number — 区块高度 — BIGINT
+log_index — 日志索引 — INT — 在交易内的日志序号（用于唯一定位）
+contract_address — 合约地址 — VARCHAR(42)
+token_standard — 代币标准 — VARCHAR(32) — 'ERC20'/'ERC721'/'ERC1155'
+from_address — 发送地址 — VARCHAR(42)
+to_address — 接收地址 — VARCHAR(42)
+value — 转账值 — NUMERIC — 原始最小单位
+value_decimal — 十进制值 — NUMERIC — 经decimals转换后的显示值
+decimals — 小数位数 — INT — token decimals（若有）
+raw — 原始数据 — JSONB — 解码后的详细结构
+created_at — 创建时间 — TIMESTAMPTZ DEFAULT now()
+
+索引/约束：
+唯一约束：UNIQUE(chain, tx_hash, log_index)（同一log只入库一次）
+索引：(chain, contract_address)、(chain, from_address)、(chain, to_address)、(chain, block_number)
+
+补充说明：
+建议：Timescale hypertable：create_hypertable('web3.token_transfers', 'created_at', if_not_exists => true)
+用于地址token历史、token holder计算、排行榜、聚合分析
+
+4. contract_abi — 合约ABI表
+中文名：合约ABI表
+职责：保存合约ABI、来源与版本信息，供解码器查询
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+contract_address — 合约地址 — VARCHAR(42)
+abi — ABI数据 — JSONB — ABI JSON array
+source — 来源 — VARCHAR(256) — ipfs:/url:/uploaded_by
+version — 版本 — VARCHAR(64) — 版本或时间戳
+fetched_at — 获取时间 — TIMESTAMPTZ DEFAULT now()
+verified — 验证标志 — BOOLEAN DEFAULT false
+
+索引：
+唯一：UNIQUE(chain, contract_address, version)
+快速查找：INDEX(chain, contract_address)
+
+补充说明：
+metadata-service管理该表；tx-processor使用Feign从该服务查询ABI
+
+5. address_balance_snapshot — 地址余额快照表
+中文名：地址余额快照表
+职责：存储按时间的地址余额快照（native或token），便于历史余额查询与趋势分析
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+address — 地址 — VARCHAR(42)
+token_address — 代币地址 — VARCHAR(42) NULLABLE（null表示native）
+balance — 余额 — NUMERIC
+snapshot_time — 快照时间 — TIMESTAMPTZ
+
+索引：
+唯一约束：UNIQUE(chain, address, token_address, snapshot_time)
+索引：(address, snapshot_time DESC)
+
+补充说明：
+生成频率可配置（例如：每小时/每日快照），并结合Redis缓存用于快速查询
+
+6. ingestion_errors — 入库/解码错误表
+中文名：入库与解码异常表
+职责：记录处理流程中发生的错误（用于DLQ、排查与重试）
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+topic — 主题 — VARCHAR(128) — Kafka topic或阶段标识（blocks/txs/logs/decoder）
+key — 业务键 — TEXT — 业务键，如txHash或logId
+payload — 负载数据 — JSONB — 原始负载
+error_msg — 错误信息 — TEXT
+retries — 重试次数 — INT DEFAULT 0
+created_at — 创建时间 — TIMESTAMPTZ DEFAULT now()
+next_retry_at — 下次重试时间 — TIMESTAMPTZ NULLABLE
+
+索引：
+INDEX(topic, key)
+
+补充说明：
+定期任务扫描重试（或手动Admin接口触发）
+
+7. reorg_events — 链重组记录表
+中文名：链重组记录表
+职责：记录检测到链重组（reorg）并保存处理结果与元数据
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+chain — 链类型 — VARCHAR(32)
+detected_at — 检测时间 — TIMESTAMPTZ
+from_block — 起始区块 — BIGINT
+to_block — 结束区块 — BIGINT
+reason — 原因 — TEXT
+handled — 处理标志 — BOOLEAN
+raw — 原始数据 — JSONB
+
+补充说明：
+系统可根据该表触发reindex / rollback任务
+
+8. admin_jobs — 管理后台任务表
+中文名：后台任务表（重解析/回填）
+职责：管理异步后台任务（reindex、backfill、cleanup）
+
+字段清单：
+id — 自增主键 — BIGSERIAL
+job_type — 任务类型 — VARCHAR(64)
+params — 参数 — JSONB
+status — 状态 — VARCHAR(32) — pending/running/success/failed
+created_at — 创建时间 — TIMESTAMPTZ
+updated_at — 更新时间 — TIMESTAMPTZ
+
+补充说明：
+admin UI调度任务与状态追踪
+
+B. MongoDB（文档数据库：柔性schema）
+Mongo主要用于：decoded_events、nft_metadata、abi_storage（也可以放Postgres，但Mongo更灵活）
+
+1. decoded_events — 解码事件集合
+中文名：解码事件集合
+职责：保存ABI解码后的事件原始结构（动态字段），支持按eventName/contract聚合
+
+文档结构：
+{
+  "_id": ObjectId,
+  "chain": "ethereum",
+  "txHash": "0x...",
+  "blockNumber": 12345,
+  "contract": "0x...",
+  "eventName": "Transfer",
+  "args": { "from":"0x...", "to":"0x...", "value":"1000" },
+  "abiId": "ipfs:Qm...",
+  "decodedAt": ISODate("2025-10-23T09:00:00Z"),
+  "rawLog": { /* 原log */ }
+}
+
+索引：
+{ chain:1, contract:1, eventName:1, decodedAt:-1 }
+{ chain:1, txHash:1 }
+
+补充说明：
+用于复杂/非结构化的事件存储与快速写入，tx-processor写入Mongo后再同步到ES
+
+2. nft_metadata — NFT元数据集合
+中文名：NFT元数据集合
+职责：保存token metadata（从IPFS或合约URI拉取），支持稀有度计算、图像URL存储
+
+文档结构：
+{
+  "token_address": "0x...",
+  "token_id": "123",
+  "name": "NFT Name",
+  "description": "NFT Description",
+  "image": "ipfs://...",
+  "attributes": [
+    { "trait_type": "Background", "value": "Blue" },
+    { "trait_type": "Eyes", "value": "Green" }
+  ],
+  "owner": "0x...",
+  "minted_at": ISODate("2025-10-23T09:00:00Z"),
+  "raw": { /* 原始元数据 */ }
+}
+
+索引：
+{ token_address:1, token_id:1 } 唯一索引
+{ owner:1 }（可选）
+
+3. abi_storage — ABI存储集合（可选）
+中文名：ABI存储集合（可选）
+文档结构：
+{
+  "contract_address": "0x...",
+  "chain": "ethereum",
+  "abi_json": { /* ABI JSON */ },
+  "source": "ipfs://...",
+  "version": "1.0.0",
+  "fetched_at": ISODate("2025-10-23T09:00:00Z")
+}
+
+索引：
+{ chain:1, contract_address:1 }
+
+补充说明：
+如果已把ABI放Postgres的contract_abi，可以不在Mongo再存
+
+C. Redis（缓存与实时计算）
+Redis作为高速缓存与计数器，Key设计必须规范并带TTL策略
+
+常用Key设计：
+balance:{chain}:{address}:{token} -> 存储余额（字符串或JSON）、TTL e.g. 5min
+recent:txs:{chain} -> 列表LPUSH最近N笔交易
+recent:events:{chain}:{contract} -> 列表
+counter:txs:per_min:{chain}:{YYYYMMDDHHmm} -> 计数器（用于TPS）
+subscription:ws:{userId} -> 订阅client列表（用于realtime-service分发，注意持久化策略）
+job:reindex:{jobId} -> job控制（临时）
+
+TTL策略：
+balance缓存：5–60分钟（根据实时性需求）
+recent列表：保留最新1000条或7天（视内存）
+counters：存48小时到7天，方便聚合
+
+D. ElasticSearch（索引设计与mapping）
+ES用于全文与聚合查询。主要索引：tx_index-*, event_index-*, nft_index-*, contract_index-*
+建议使用index templates + ILM策略（按天/按链生成索引）
+
+1. tx_index-*（交易索引）
+核心字段：
+tx_hash (keyword) — 唯一交易哈希
+chain (keyword)
+from / to (keyword)
+value (scaled_float/double) — 值
+value_display (text / keyword) — 带单位的显示值（可选）
+block_number (long)
+timestamp (date)
+status (keyword)
+events (nested) — 包含eventName(keyword), contract(keyword), args (object)
+raw (object, enabled=false) — 如果需要全文搜索，开启特定字段
+
+聚合需求：
+tps（按timestamp aggregation）
+top senders/receivers（terms agg on from/to）
+gas分布（histogram on gas）
+
+分片配置：
+number_of_shards基于数据量与硬件（示例3 shards），number_of_replicas >=1
+
+2. event_index-*（事件索引）
+核心字段：
+event_id (keyword) 唯一event标识（chain:txHash:logIndex）
+chain (keyword)
+contract (keyword)
+eventName (keyword)
+args (nested/object) — 若args中有可查询字段（address、uint），需要单独mapping
+timestamp (date)
+tx_hash (keyword)
+
+聚合与搜索：
+eventName分布、某参数top值（如to地址）
+条件筛选：contract + eventName + args.value范围
+
+3. nft_index-*（NFT索引）
+核心字段：
+token_address (keyword)
+token_id (keyword)
+owner (keyword)
+name (text)
+attributes (nested: trait_type keyword, value keyword)
+rarity_score (double)
+minted_at (date)
+
+聚合需求：
+按attribute聚合查看稀有度分布、稀有度top-N
