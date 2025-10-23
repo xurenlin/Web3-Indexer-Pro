@@ -1,0 +1,95 @@
+1. 16周详细时间计划（按Spring Cloud Alibaba更新并含ElasticSearch/Kibana）
+
+第1月：基础与服务框架（第1-4周）
+
+1.1 第1周
+- 初始化Git仓库与mono-repo结构（或多repo）
+- 搭建Nacos（注册/配置）、Sentinel、Zipkin开发环境（Docker Compose）
+- 初始化各微服务基础Spring Boot项目并接入Nacos注册中心
+  包含服务：api-gateway、auth-service、chain-indexer、tx-processor、metadata-service、analytics-service
+交付物：基础服务骨架 + Nacos工作环境
+
+1.2 第2周
+- chain-indexer：实现Web3j基础抓取（获取latest block）
+- Kafka producer将blocks/txs/logs推送到本地Kafka
+- metadata-service：实现contract_abi表（Mongo）与上传/查询API
+交付物：区块抓取到Kafka；ABI管理API
+
+1.3 第3周
+- tx-processor：实现Kafka consumer（consume logs）
+- 实现PostgreSQL基础写入（chain_blocks、chain_transactions）
+- ElasticSearch环境部署（ES + Kibana）
+- 实现tx_index基本写入pipeline
+交付物：Kafka -> tx-processor -> Postgres/ES基本流水线
+
+1.4 第4周
+- Feign & Nacos集成测试：api-gateway -> tx-processor -> metadata-service链路
+- 集成Zipkin/Sleuth（链路追踪）与Prometheus指标导出
+交付物：端到端调用链 & 基本监控Dashboard
+
+第2月：ABI解码与Rust引入（第5-8周）
+
+2.1 第5周
+- Rust crate初始化（web3-indexer-utils）：实现keccak、address校验（unit tests）
+- tx-processor设计事件解码流程 & DLQ机制
+交付物：Rust utils crate，解码流程设计文档
+
+2.2 第6周
+- Rust解码器实现decode_log（支持ERC20 Transfer）并编译成动态库（.so / .dll）
+- JNI封装示例（Java调用Rust的简单测试）
+交付物：Rust解码器JNI原型 & Java集成demo
+
+2.3 第7周
+- tx-processor集成：通过JNI调用Rust解码器，对logs topic的消息进行解码
+- 写入token_transfers与ES event_index
+- 增加错误处理、DLQ重试流程
+交付物：完全工作流的事件解码（Java + Rust），并能查询/tx/{hash}/events
+
+2.4 第8周
+- 性能测试：对比Java-only vs Java+Rust解码吞吐，记录数据
+- 文档：解码器接口契约与JNI版本管理策略
+交付物：性能报告与改进建议
+
+第3月：多链支持、重组处理、ES强化（第9-12周）
+
+3.1 第9周
+- 多链配置：Nacos中加入Polygon配置，chain-indexer支持多链拉取与topic命名
+- ES索引策略：按链分索引模板，设置ILM（索引生命周期管理）
+交付物：多链配置 & ES ILM策略
+
+3.2 第10周
+- chain-indexer：引入Rust async RPC client（可替代部分Web3j路径）
+- 实现批量RPC（eth_getLogs / eth_getBlockByNumber批量）
+交付物：Rust RPC客户端在开发分支中工作，Java可通过JNI/HTTP测试
+
+3.3 第11周
+- 链重组（reorg）策略实现：确认数逻辑、回滚并重解析机制
+- 实现reindex admin API
+交付物：reorg流程验证 & 重解析工具
+
+3.4 第12周
+- ES聚合/Kibana仪表盘初版（交易量、热门合约、NFT属性分布）
+- 性能调优（Kafka分区、tx-processor并发消费者数、Postgres分区或Timescale配置）
+交付物：Kibana仪表盘 & 性能调整文档
+
+第4月：实时/GraphQL/高级分析（第13-16周）
+
+4.1 第13周
+- realtime-service（Rust）：实现基本WebSocket订阅推送（newBlocks、txEvents）
+- tx-processor -> realtime-service集成（HTTP推送）
+交付物：WebSocket demo，前端订阅示例
+
+4.2 第14周
+- GraphQL（graphql-java）实现：address聚合查询、分页、history
+- 将部分高读频查询规划为可迁移到Rust的read-optimized服务（候选清单）
+交付物：GraphQL endpoint + 示例queries
+
+4.3 第15周
+- 开发个人特性（选择的demo）：MEV分析/NFT稀有度/跨链资产追踪
+- 将计算密集部分尽量用Rust实现
+交付物：功能demo
+
+4.4 第16周
+- 文档整理：架构图、部署指南（Helm charts）、OpenAPI、GraphQL schema、Kibana dashboards、运维runbook
+- 回顾迁移优先级：哪些API/服务在下一阶段迁移为Rust独立服务
+交付物：最终交付包（代码、文档、演示脚本）
