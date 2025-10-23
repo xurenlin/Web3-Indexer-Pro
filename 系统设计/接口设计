@@ -1,0 +1,352 @@
+# ========================
+# 全局约定（必须遵守）
+# ========================
+
+## 1. 基础约定
+----------------------------------------
+- 基路径：所有API版本为 /api/v1/
+- 认证方式：
+  * Human用户：OAuth2 / JWT（Authorization: Bearer <token>）
+  * 机器/服务：API Key（X-API-KEY），并设置限流策略
+- 分页：统一使用 ?page=<n>&size=<m> 或 cursor-based（cursor用cursor字段）
+  * 默认size=20，最大size=100
+- 时间格式：全部时间字段使用ISO8601 UTC（2025-10-23T09:00:00Z）
+- 错误格式（JSON）：
+  {
+    "code": 4001,
+    "message": "参数无效",
+    "details": { "field": "txHash", "reason": "格式错误" }
+  }
+- 限流/熔断：网关（api-gateway）和服务内部使用Sentinel策略，超过阈值返回429
+- Tracing：所有请求需带X-B3-TraceId（或由Sleuth自动注入）
+
+## 2. 服务与接口归属
+----------------------------------------
+- api-gateway：对外统一入口，认证、限流、路由
+- auth-service：认证相关接口（注册/登录/API key管理）
+- chain-indexer：内部抓取，不对外暴露大多数endpoint，仅Admin
+- tx-processor：交易/事件查询接口（对外暴露主要查询接口）
+- metadata-service：合约ABI / NFT metadata查询与管理接口
+- analytics-service：复杂检索、排行榜、聚合分析、Search接口（调ES）
+- realtime-service (Rust)：WebSocket/GraphQL订阅接口（对外暴露实时订阅端点）
+
+# ========================
+# REST接口详细契约
+# ========================
+
+## A. 健康与认证（auth-service / api-gateway）
+============================================
+
+### 1. 健康检查接口
+----------------------------------------
+- 接口：GET /api/v1/health
+- 服务：api-gateway（proxy到各服务health）
+- 认证：无
+- 请求：无
+- 响应200：
+  {
+    "status":"ok",
+    "services": {
+       "auth-service":"ok",
+       "tx-processor":"ok",
+       "chain-indexer":"ok"
+    },
+    "timestamp":"2025-10-23T09:00:00Z"
+  }
+- 用途：负载均衡器/运维探活
+
+### 2. 获取Token接口
+----------------------------------------
+- 接口：POST /api/v1/auth/token
+- 服务：auth-service
+- 认证：无
+- 请求：
+  {
+    "grant_type":"password",
+    "username":"user@example.com",
+    "password":"..."
+  }
+- 响应200：
+  {
+    "access_token":"<jwt>",
+    "expires_in":3600,
+    "token_type":"Bearer"
+  }
+- 存储：auth-service自身DB（非本设计）
+
+## B. 区块查询（tx-processor）
+============================================
+
+### 3. 区块查询接口
+----------------------------------------
+- 接口：GET /api/v1/{chain}/block/{hashOrNumber}
+- 服务：tx-processor
+- 认证：可选（公开接口，但超频需API Key限流）
+- 路径参数：
+  * chain（ethereum|polygon）
+  * hashOrNumber（区块哈希或高度）
+- 响应200：
+  {
+    "chain":"ethereum",
+    "blockNumber":12345678,
+    "blockHash":"0x...",
+    "parentHash":"0x...",
+    "timestamp":"2025-10-23T09:00:00Z",
+    "txCount":12,
+    "transactions":[ /* 可选：部分tx列表或分页 */ ]
+  }
+- 内部逻辑：
+  tx-processor -> Postgres chain_blocks查询（若未命中，查询chain-indexer / Kafka回填或触发backfill job）
+- 写入存储：无（只读），可能触发admin job（写admin_jobs）
+- 状态码：200 OK, 404 Not Found, 429 Too Many Requests
+
+## C. 交易与事件查询（tx-processor）
+============================================
+
+### 4. 交易查询接口
+----------------------------------------
+- 接口：GET /api/v1/{chain}/tx/{txHash}
+- 服务：tx-processor
+- 认证：可选，但对高QPS客户需要API Key
+- 参数：chain, txHash
+- 响应200：
+  {
+    "chain":"ethereum",
+    "txHash":"0x...",
+    "blockNumber":123,
+    "from":"0x...",
+    "to":"0x...",
+    "value":"1000000000000000000",
+    "gas":21000,
+    "status":"confirmed",
+    "events":[
+      {
+        "contract":"0x..",
+        "eventName":"Transfer",
+        "args":{"from":"0x..","to":"0x..","value":"1000"}
+      }
+    ],
+    "raw": { /* original json */ }
+  }
+- 处理逻辑：
+  查询Postgres chain_transactions + token_transfers（or Mongo decoded_events）
+  若events未解码 -> 返回202 Processing，并把txHash写入解码队列（Kafka topic abi-requests）
+  触发解码后，tx-processor接收结果 -> 写decoded_events (Mongo) + token_transfers (Postgres) + ES tx_index/event_index，并更新Redis缓存
+- 写入存储：
+  若需要解码：写Kafka（abi-request）
+  解码完成后：写Mongo/Postgres/ES/Redis
+- 状态码：200 OK, 202 Processing, 404 Not Found
+- 幂等：abi-requests topic保证messageId = chain:txHash，tx-processor使用去重逻辑避免重复解码
+
+### 5. 交易事件查询接口
+----------------------------------------
+- 接口：GET /api/v1/{chain}/tx/{txHash}/events
+- 服务：tx-processor
+- 说明：只返回事件数组（若解码中返回202）
+- 响应：
+  * 200：decoded events array
+  * 202：{"status":"processing","message":"queued"}
+- 写入：无（若处理中会写Kafka）
+
+## D. ABI / Metadata（metadata-service）
+============================================
+
+### 6. ABI查询接口
+----------------------------------------
+- 接口：GET /api/v1/{chain}/contract/{address}/abi
+- 服务：metadata-service
+- 认证：可选（部分ABI公开）
+- 响应200：{ "contract_address":"0x...", "abi": [...] , "version":"v1", "source":"ipfs:..." }
+- 数据来源：查contract_abi表（Postgres）或abi_storage (Mongo)
+- 备注：若ABI缺失，可触发后台拉取任务（admin job）
+
+### 7. ABI上传接口（Admin）
+----------------------------------------
+- 接口：POST /api/v1/admin/contract/{chain}/{address}/abi
+- 服务：metadata-service
+- 认证：API Key with admin权限
+- 请求：{ "abi": [...], "source":"uploaded", "version":"v1" }
+- 响应：201 Created
+- 写入：contract_abi表（Postgres）
+
+## E. Search / Analytics（analytics-service）
+============================================
+
+### 8. 搜索接口
+----------------------------------------
+- 接口：GET /api/v1/search?q={q}&index={index}&from={}&size={}
+- 服务：analytics-service（对ES做代理/封装）
+- 认证：API Key（对外）
+- 参数：
+  * q：查询字符串（支持KQL / DSL）
+  * index：tx/event/nft（可选）
+  * from/size：分页
+- 响应200：
+  {
+    "total": 12345,
+    "hits": [ { /* doc */ }, ... ],
+    "took_ms": 12
+  }
+- 内部逻辑：analytics-service将请求转换为ES query（可做安全过滤），并返回ES hits（或做二次聚合）
+
+## F. Admin / Backfill（chain-indexer & admin）
+============================================
+
+### 9. 重索引接口
+----------------------------------------
+- 接口：POST /api/v1/admin/reindex
+- 服务：chain-indexer / tx-processor coordination（由api-gateway route到admin service）
+- 认证：Admin API Key
+- 请求：
+  { "chain":"ethereum", "fromBlock": 12000000, "toBlock": 12001000, "jobType":"reindex" }
+- 响应：202 Accepted { "jobId": "job-1234" }
+- 写入：admin_jobs表 + 触发Kafka control topic（reindex-requests）
+- 处理：后台worker消费并入库，出现错误写ingestion_errors
+
+## G. Realtime / WebSocket（realtime-service — Rust）
+============================================
+
+### 10. WebSocket端点
+----------------------------------------
+- 端点：ws://realtime.example.com/ws
+- 协议：WebSocket，使用JWT / API Key验证（handshake带Authorization header）
+- 消息格式（订阅）：
+  { "action":"subscribe", "topic":"newBlocks", "chain":"ethereum" }
+- 推送消息示例：
+  { "type":"tx_event", "chain":"ethereum", "txHash":"0x...", "event": {...} }
+- 注意：realtime-service不注册到Nacos（Rust服务独立），tx-processor通过HTTP/gRPC将数据推给它
+
+# ========================
+# GraphQL Schema
+# ========================
+
+scalar DateTime
+scalar JSON
+
+type Block {
+  chain: String!
+  blockNumber: Int!
+  blockHash: String!
+  parentHash: String
+  timestamp: DateTime
+  txCount: Int
+}
+
+type Transaction {
+  chain: String!
+  txHash: String!
+  blockNumber: Int
+  from: String
+  to: String
+  value: String
+  gas: Int
+  status: String
+  raw: JSON
+  events: [DecodedEvent]
+}
+
+type DecodedEvent {
+  chain: String!
+  txHash: String
+  contract: String
+  eventName: String
+  args: JSON
+  blockNumber: Int
+  logIndex: Int
+}
+
+type TokenTransfer {
+  chain: String!
+  txHash: String!
+  contractAddress: String
+  from: String
+  to: String
+  value: String
+  valueDecimal: Float
+  blockNumber: Int
+  createdAt: DateTime
+}
+
+type NFT {
+  tokenAddress: String!
+  tokenId: String!
+  name: String
+  image: String
+  owner: String
+  attributes: [JSON]
+  rarityScore: Float
+}
+
+type SearchResult {
+  total: Int
+  hits: [JSON]
+}
+
+type Query {
+  block(chain: String!, number: Int, hash: String): Block
+  tx(chain: String!, txHash: String!): Transaction
+  txEvents(chain: String!, txHash: String!): [DecodedEvent]
+  addressTxs(chain: String!, address: String!, limit: Int = 20, cursor: String): [Transaction]
+  tokenTransfers(chain: String!, address: String!, tokenAddress: String, limit: Int = 20): [TokenTransfer]
+  search(q: String!, index: String, from: Int = 0, size: Int = 20): SearchResult
+  nft(tokenAddress: String!, tokenId: String!): NFT
+}
+
+type Mutation {
+  triggerReindex(chain: String!, fromBlock: Int!, toBlock: Int!): String
+}
+
+# ========================
+# Feign服务调用关系矩阵
+# ========================
+
+调用方 → 被调用方：
+- api-gateway → auth-service（token验证）
+- api-gateway → tx-processor（主查询转发）
+- tx-processor → metadata-service（获取ABI）
+- tx-processor → analytics-service（复杂搜索/聚合时）
+- analytics-service → tx-processor / metadata-service（补充信息）
+- tx-processor → realtime-service (Rust)（HTTP/gRPC推送 — 非Feign）
+
+所有Java → Java的调用使用Feign + Nacos Discovery，并在Feign Client上配置超时与重试策略（如2s超时，重试2次，快速失败fallback）
+
+# ========================
+# 请求处理流程图
+# ========================
+
+sequenceDiagram
+    participant U as 前端用户
+    participant G as API Gateway
+    participant A as auth-service
+    participant T as tx-processor
+    participant M as metadata-service
+    participant I as chain-indexer
+    participant K as Kafka
+    participant R as Rust解码器(JNI)
+    participant PG as PostgreSQL
+    participant ES as ElasticSearch
+    participant RS as Redis
+    participant RT as realtime-service(Rust)
+
+    U->>G: GET /api/v1/{chain}/tx/{txHash}
+    G->>A: Feign: validate token
+    A-->>G: OK
+    G->>T: Feign: getTx(txHash)
+    T->>PG: SELECT FROM chain_transactions WHERE tx_hash=...
+    alt TX已含decoded events
+        PG-->>T: 返回tx + events
+    else 需要解码
+        T->>K: 发送abi-request (messageId=chain:txHash)
+        I->>K: (通常chain-indexer已写logs to Kafka)
+        K-->>T: tx-processor消费logs
+        T->>M: Feign: get ABI by contract (metadata-service)
+        M-->>T: 返回ABI
+        T->>R: JNI调用Rust解码器decode_log(abi, topics, data)
+        R-->>T: 返回DecodedEvent
+        T->>PG: 写token_transfers / chain_transactions更新
+        T->>ES: 写入tx_index / event_index
+        T->>RS: 缓存结果
+        T->>RT: HTTP/gRPC推送实时消息
+    end
+    T-->>G: 返回交易+events
+    G-->>U: 响应数据
