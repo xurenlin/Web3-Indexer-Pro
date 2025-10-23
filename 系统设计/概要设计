@@ -1,0 +1,60 @@
+项目概要设计（高层）
+
+一、项目目标
+构建一个支持多链（Ethereum、Polygon）的实时Web3数据服务平台，提供完整的区块链数据服务能力。
+
+二、核心功能
+1. 区块/交易/事件实时索引
+2. ABI解码
+3. 历史数据检索
+4. 实时推送（WebSocket）
+5. GraphQL接口
+6. ElasticSearch支持的复杂搜索与聚合
+7. 基础分析功能：
+   - Token统计
+   - 地址活跃度分析
+   - NFT稀有度计算
+
+三、技术架构
+1. 微服务治理基础：Spring Cloud Alibaba
+2. 高性能模块：Rust（JNI与独立服务）
+
+四、关键非功能要求
+
+1. 实时性
+   - 新区块被索引后尽快可被查询或推送
+   - 通常<1s到入队
+   - 解码/索引时间视吞吐量而定
+
+2. 可扩展性
+   - Kafka消息队列
+   - 分布式微服务架构
+   - ElasticSearch分片
+
+3. 可观测性
+   - Prometheus/Grafana（指标监控）
+   - Zipkin（链路追踪）
+   - Kibana（日志分析）
+
+4. 安全性
+   - API Key/OAuth2认证
+   - Sentinel限流保护
+
+五、微服务清单（7+Rust）
+
+1. 核心业务服务
+   - api-gateway：API网关、限流控制、路由转发
+   - auth-service：用户认证、权限管理
+   - chain-indexer：区块链数据抓取、向Kafka推送消息
+   - tx-processor：交易/日志解析、调用Rust解码、写入DB/ES
+   - metadata-service：ABI管理、NFT元数据管理
+   - analytics-service：聚合分析、排行榜生成、数据统计
+
+2. 基础设施服务
+   - config/discovery/infra：
+     * Nacos：服务注册与配置中心
+     * Sentinel：熔断降级与限流
+     * Zipkin：分布式链路追踪
+
+3. 高性能服务
+   - realtime-service（Rust）：高性能WebSocket推送、GraphQL查询服务
