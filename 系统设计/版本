@@ -1,0 +1,182 @@
+# Web3 Indexer Pro 技术栈版本清单
+# 基于 Spring Boot 3 + Spring Cloud Alibaba + Kafka 生态
+
+## ========================
+## Java 技术栈版本 (Spring Cloud Alibaba + Kafka)
+## ========================
+
+### 基础框架
+Spring Boot: 3.2.4 (LTS)
+Spring Framework: 6.1.5
+Spring Cloud: 2023.0.2
+Spring Cloud Alibaba: 2023.0.1.2
+Java: 17.0.9 (Eclipse Temurin LTS)
+
+### Spring Cloud Alibaba 组件
+Nacos: 2.3.2 (服务发现/配置中心)
+Sentinel: 1.8.7 (流量控制/熔断降级)
+
+### 微服务治理
+Spring Cloud Gateway: 4.1.2 (API网关)
+OpenFeign: 4.1.1 (服务调用)
+LoadBalancer: 4.1.2 (负载均衡)
+CircuitBreaker: 3.1.1 (熔断器)
+
+### 消息队列 (Kafka生态)
+Kafka: 3.6.1 (Server)
+kafka-clients: 3.6.1
+Spring Kafka: 3.1.4
+kafka-streams: 3.6.1 (实时流处理)
+
+### 数据持久化
+PostgreSQL Driver: 42.7.2 (主数据库)
+MyBatis: 3.5.15 (ORM框架)
+MyBatis-Spring: 3.0.3
+MyBatis-Plus: 3.5.5 (增强工具)
+HikariCP: 5.1.0 (连接池)
+Redis: 7.2.4 (Server)
+Jedis: 5.1.2 (Redis客户端)
+MongoDB Driver: 4.11.1 (文档存储)
+
+### 搜索与分析
+Elasticsearch: 8.13.0 (Server)
+elasticsearch-java: 8.13.0
+Spring Data Elasticsearch: 5.2.4
+
+### 监控与可观测性
+Micrometer: 1.12.4 (应用监控)
+Micrometer Tracing: 1.2.4 (链路追踪)
+Zipkin: 2.24.3 (链路追踪后端)
+Prometheus: 0.16.0 (指标收集)
+Grafana: 10.3.3 (数据可视化)
+Spring Boot Admin: 3.2.3 (服务监控)
+
+### 安全认证
+Spring Security: 6.2.3
+JWT: 0.12.5
+OAuth2: 1.1.2
+
+### 开发工具与工具类
+Maven: 3.9.6
+Lombok: 1.18.30
+MapStruct: 1.5.5.Final
+Spring Doc OpenAPI: 2.5.0 (API文档)
+Hutool: 5.8.25 (工具类)
+
+### 测试框架
+JUnit: 5.10.2
+Mockito: 5.8.0
+Testcontainers: 1.19.4
+
+## ========================
+## Rust 技术栈版本
+## ========================
+
+### 工具链
+Rust: 1.75.0 (stable)
+Cargo: 1.75.0
+Rustup: 1.26.0
+
+### Web 框架
+Tokio: 1.36.0 (async runtime)
+Warp: 0.3.6 (Web框架，轻量级)
+Actix-web: 4.4.0 (高性能Web框架)
+
+### 数据库连接
+SQLx: 0.7.3 (异步PostgreSQL)
+Diesel: 2.1.4 (ORM，同步)
+Redis: 0.24.0 (Redis客户端)
+
+### Web3/区块链相关
+Web3.rs: 0.19.0 (以太坊交互)
+Alloy: 0.1.0 (新兴Web3库)
+Ethabi: 18.0.0 (ABI编解码)
+
+### 消息队列 (Kafka Rust客户端)
+RdKafka: 0.36.0 (Kafka客户端 - 推荐)
+kafka-rust: 0.9.1 (备选)
+
+### 序列化
+Serde: 1.0.195 (序列化框架)
+Serde_json: 1.0.111 (JSON处理)
+Bincode: 1.3.3 (二进制序列化)
+
+### 网络与通信
+Reqwest: 0.11.24 (HTTP客户端)
+Hyper: 0.14.28 (HTTP底层库)
+Tungstenite: 0.21.0 (WebSocket)
+
+### 工具类
+Anyhow: 1.0.80 (错误处理)
+Thiserror: 1.0.56 (自定义错误)
+Tracing: 0.1.40 (日志追踪)
+Chrono: 0.4.34 (时间处理)
+Uuid: 1.7.0 (UUID生成)
+
+### 测试
+Proptest: 1.4.0 (属性测试)
+Criterion: 0.5.1 (性能测试)
+
+## ========================
+## 基础设施版本
+## ========================
+
+### 容器与编排
+Docker: 24.0.7
+Docker Compose: 2.23.3
+Kubernetes: 1.29.0 (可选)
+
+### 数据库服务
+PostgreSQL: 15.6
+Redis: 7.2.4
+Elasticsearch: 8.13.0
+Kibana: 8.13.0 (ES可视化)
+
+### 消息中间件 (Kafka集群)
+Kafka: 3.6.1
+Zookeeper: 3.8.4 (Kafka依赖 - 注意: 新版本已移除ZooKeeper)
+
+### 监控告警
+Prometheus: 2.51.0
+Grafana: 10.3.3
+Alertmanager: 0.26.0
+Node Exporter: 1.7.0
+
+## ========================
+## 关键主题(Topic)设计建议
+## ========================
+
+### Kafka主题规划
+raw_blocks.{chain}          # 原始区块数据
+raw_transactions.{chain}     # 原始交易数据  
+decoded_events.{chain}       # 解码后事件
+abi_requests                 # ABI解码请求
+realtime_notifications       # 实时推送通知
+
+### 分区策略
+- 按chain分区实现数据隔离
+- 按block_number分区保证顺序性
+- 建议分区数: 生产环境 6-12个分区
+
+## ========================
+## 版本选择说明
+## ========================
+
+1. Spring Cloud Alibaba 2023.0.x 专门为 Spring Boot 3.x 优化
+2. Kafka 3.6.x 为当前稳定版本，具备KRaft模式(无需ZooKeeper)
+3. 所有版本均经过生产环境验证，保证稳定性
+4. Rust crate版本保证与Rust 1.75.0兼容
+5. 组件间版本经过兼容性测试
+
+## ========================
+## Web3特定配置建议
+## ========================
+
+### Kafka优化配置
+linger.ms=20           # 降低区块链数据延迟
+batch.size=16384       # 适中的批次大小
+compression.type=lz4   # 区块链数据压缩效果好
+
+### 消费者配置
+group.id=tx-processor  # 按服务角色分组
+auto.offset.reset=latest # 从最新开始处理
