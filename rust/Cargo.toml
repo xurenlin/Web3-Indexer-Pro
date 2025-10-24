@@ -1,0 +1,6 @@
+[workspace]
+members = ["realtime-service", "abi-decoder", "common"]
+
+[workspace.dependencies]
+tokio = "1.36.0"
+warp = "0.3.6"
