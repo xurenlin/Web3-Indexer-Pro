@@ -1,0 +1,17 @@
+server:
+  port: 8006
+
+spring:
+  application:
+    name: metadata-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+  data:
+    mongodb:
+      uri: mongodb://admin:mongodb123@localhost:27017/metadata?authSource=admin
+      auto-index-creation: true

@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: chain-indexer
+  datasource:
+    url: jdbc:postgresql://localhost:5432/web3_indexer
+    username: admin
+    password: password123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 生产环境用 validate，开发可用 update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+# Web3 配置
+web3:
+  rpc:
+    url: https://mainnet.infura.io/v3/your-project-id
+  blockchain:
+    start-block: 18000000
+    batch-size: 100
+
+server:
+  port: 8002

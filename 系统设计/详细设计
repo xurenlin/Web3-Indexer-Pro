@@ -1,22 +1,29 @@
 1. 详细设计（模块职责、交互与技术选型）
 
-1.1 各微服务职责（简要）
+1.1 各微服务职责与端口配置
 
-1. api-gateway
+1. api-gateway (8080)
 - 路由转发
 - 认证鉴权（JWT校验）
 - 限流（Sentinel）
 - 统一接入日志
 技术栈：Spring Cloud Gateway + Sentinel + Nacos
 
-2. auth-service
+2. auth-service (8000)
 - 用户/开发者管理
 - API Key管理
 - OAuth2 token发放
 - 权限控制
 技术栈：Spring Cloud Alibaba + Spring Security OAuth2
 
-3. chain-indexer
+3. infra-config (8001)
+- 统一配置管理
+- 共享基础设施配置
+- 公共依赖配置
+- 跨服务通用设置
+技术栈：Spring Cloud Alibaba + Nacos Config
+
+4. chain-indexer (8002)
 - 从RPC节点订阅新区块
 - 轮询历史区块
 - 写入Kafka topics（blocks, txs, logs）
@@ -24,7 +31,7 @@
 技术栈：Spring Boot（Spring Cloud）+ Web3j（初期）+ Kafka Producer
 后期优化：通过JNI调用Rust RPC客户端替换高吞吐路径
 
-4. tx-processor
+5. tx-processor (8004)
 - Kafka Consumer（logs/txs）
 - 决定是否需要ABI解码
 - 通过Feign调用metadata-service获取ABI
@@ -34,52 +41,91 @@
 - 触发realtime-service推送
 技术栈：Spring Cloud Alibaba + Kafka Consumer + Feign + ElasticSearch客户端 + JNI
 
-5. metadata-service
+6. metadata-service (8006)
 - contract ABI管理（上传、版本）
 - 从IPFS/GitHub拉取ABI
 - NFT元数据抓取与缓存（MongoDB）
 - 提供ABI查询API（供tx-processor使用）
 技术栈：Spring Cloud Alibaba + MongoDB
 
-6. analytics-service
+7. admin-service (8007)
+- 系统管理（用户、权限、角色、菜单）
+- 数据监控（节点状态、服务健康、数据同步）
+- 业务管理（API Key审批、合约信息、NFT集合）
+- 运维管理（服务配置、数据库维护、任务调度）
+技术栈：Spring Cloud Alibaba + PostgreSQL + Redis
+
+8. analytics-service (8009)
 - 定时/按需聚合：token转账统计、地址排行、NFT稀有度评估、趋势分析
 - 主要读ES + Postgres
 - 输出聚合结果写入ES或Redis缓存
 技术栈：Spring Cloud Alibaba + ElasticSearch + Redis
 可选：Seata（在需要分布式事务时使用）
 
-7. realtime-service (Rust)
-- 高并发WebSocket / GraphQL订阅推送
+9. realtime-service (8010) rust
+- 高并发WebSocket (8011) / GraphQL (8012) 订阅推送
 - tx-processor向该服务推送事件（HTTP/gRPC）
 - 负责分发到订阅客户端（高吞吐低延迟）
 技术栈：Rust (axum / tokio / tungstenite)
 
-1.2 服务间通信
+1.2 服务间通信与基础设施端口
 
 服务发现与配置：
-- Nacos（所有Java服务注册）
+- Nacos (8848) - 所有Java服务注册
+
+消息队列：
+- Kafka (9092) - indexer -> tx-processor
+
+数据存储：
+- PostgreSQL (5432) - 关系型数据存储
+- MongoDB (27017) - 文档数据存储
+- ElasticSearch (9200) - 搜索与分析
+- Redis (6379) - 缓存
 
 内部调用：
 - Java ↔ Java：使用Feign + Nacos Discovery（带熔断策略）
 
-消息队列：
-- Kafka（indexer -> tx-processor）
-
 跨语言通信：
 - Java ↔ Rust（本机）：JNI（高频、CPU密集解码）
-- Java ↔ Rust（独立服务）：HTTP/gRPC（realtime-service）
+- Java ↔ Rust（独立服务）：HTTP/gRPC（realtime-service 8010）
 
-数据存储：
-- tx-processor写PostgreSQL / MongoDB / ElasticSearch
-- analytics-service读ES / Redis
-
-1.3 运维与监控
+1.3 运维与监控端口
 
 监控体系：
-- Prometheus + Grafana（指标监控）
-- Zipkin / Sleuth（链路追踪）
-- Kibana（ElasticSearch可视化）
-- Sentinel Dashboard（限流/降级监控）
+- Prometheus (9090) + Grafana (3000) - 指标监控
+- Zipkin (9411) - 链路追踪
+- Kibana (5601) - ElasticSearch可视化
+- Sentinel Dashboard (8858) - 限流/降级监控
+- Mongo Express (8084) - MongoDB管理界面
+- Kafka UI (8083) - Kafka管理界面
 
 日志管理：
-- ELK或Loki（结构化日志）
+- ELK或Loki - 结构化日志
+
+端口汇总表
+
+服务类型       服务名称           端口      协议       用途
+业务服务       api-gateway       8080      HTTP       API网关
+              auth-service      8000      HTTP       认证服务
+              chain-indexer     8002      HTTP       链数据索引
+              tx-processor      8004      HTTP       交易处理
+              metadata-service  8006      HTTP       元数据管理
+              admin-service     8007      HTTP       管理后台
+              analytics-service 8009      HTTP       数据分析
+              realtime-service  8010      HTTP       实时服务API
+              realtime-service  8011      WebSocket  WebSocket推送
+              realtime-service  8012      GraphQL    GraphQL查询
+基础设施       infra-config      8001      HTTP       统一配置服务
+              Nacos             8848      HTTP       服务发现
+              Kafka             9092      TCP        消息队列
+              PostgreSQL        5432      TCP        数据库
+              MongoDB           27017     TCP        文档库
+              ElasticSearch     9200      HTTP       搜索引擎
+              Redis             6379      TCP        缓存
+监控运维       Sentinel          8858      HTTP       流量控制
+              Prometheus        9090      HTTP       指标收集
+              Grafana           3000      HTTP       数据可视化
+              Zipkin            9411      HTTP       链路追踪
+              Kibana            5601      HTTP       ES可视化
+              Mongo Express     8084      HTTP       MongoDB管理
+              Kafka UI          8083      HTTP       Kafka管理

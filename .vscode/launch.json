@@ -1,0 +1,85 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "启动 infra-config",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.InfraConfigApplication",
+            "projectName": "infra-config",
+            "cwd": "${workspaceFolder}/java/infra-config"
+        },
+        {
+            "name": "启动 api-gateway",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.ApiGatewayApplication",
+            "projectName": "api-gateway",
+            "cwd": "${workspaceFolder}/java/api-gateway"
+        },
+        {
+            "name": "启动 auth-service",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.AuthServiceApplication",
+            "projectName": "auth-service",
+            "cwd": "${workspaceFolder}/java/auth-service"
+        },
+        {
+            "name": "启动 chain-indexer",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.ChainIndexerApplication",
+            "projectName": "chain-indexer",
+            "cwd": "${workspaceFolder}/java/chain-indexer"
+        },
+        {
+            "name": "启动 tx-processor",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.TxProcessorApplication",
+            "projectName": "tx-processor",
+            "cwd": "${workspaceFolder}/java/tx-processor"
+        },
+        {
+            "name": "启动 metadata-service",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.MetadataServiceApplication",
+            "projectName": "metadata-service",
+            "cwd": "${workspaceFolder}/java/metadata-service"
+        },
+        {
+            "name": "启动 analytics-service",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.AnalyticsServiceApplication",
+            "projectName": "analytics-service",
+            "cwd": "${workspaceFolder}/java/analytics-service"
+        },
+        {
+            "name": "启动 admin-service",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.AdminServiceApplication",
+            "projectName": "admin-service",
+            "cwd": "${workspaceFolder}/java/admin-service"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "启动所有微服务",
+            "configurations": [
+                "启动 infra-config",
+                "启动 api-gateway",
+                "启动 auth-service",
+                "启动 chain-indexer",
+                "启动 tx-processor",
+                "启动 metadata-service",
+                "启动 analytics-service",
+                "启动 admin-service"
+            ],
+            "stopAll": true
+        }
+    ]
+}

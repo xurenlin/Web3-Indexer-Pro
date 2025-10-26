@@ -1,0 +1,13 @@
+{
+    "java.project.sourcePaths": [
+        "Java/infra-config/src",
+        "Java/api-gateway/src",
+        "Java/auth-service/src",
+        "Java/chain-indexer/src",
+        "Java/tx-processor/src",
+        "Java/metadata-service/src",
+        "Java/analytics-service/src",
+        "Java/admin-service/src"
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
+}
