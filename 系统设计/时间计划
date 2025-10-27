@@ -1,95 +1,118 @@
-1. 16周详细时间计划（按Spring Cloud Alibaba更新并含ElasticSearch/Kibana）
+区块链数据索引平台开发计划 (16周)
+=====================================
 
-第1月：基础与服务框架（第1-4周）
+第1月：基础与服务框架 + Rust早期引入 (第1-4周)
+-----------------------------------------------
 
-1.1 第1周
-- 初始化Git仓库与mono-repo结构（或多repo）
-- 搭建Nacos（注册/配置）、Sentinel、Zipkin开发环境（Docker Compose）
-- 初始化各微服务基础Spring Boot项目并接入Nacos注册中心
-  包含服务：api-gateway、auth-service、chain-indexer、tx-processor、metadata-service、analytics-service
-交付物：基础服务骨架 + Nacos工作环境
+第1周 - 基础环境搭建
+• 初始化Git仓库与mono-repo结构
+• 搭建Nacos、Sentinel、Zipkin开发环境(Docker Compose)
+• 初始化各微服务基础Spring Boot项目并接入Nacos
+• Rust环境准备：安装Rust工具链，配置Cargo工作区
+交付物：基础服务骨架 + Rust开发环境
 
-1.2 第2周
-- chain-indexer：实现Web3j基础抓取（获取latest block）
-- Kafka producer将blocks/txs/logs推送到本地Kafka
-- metadata-service：实现contract_abi表（Mongo）与上传/查询API
-交付物：区块抓取到Kafka；ABI管理API
+第2周 - 数据抓取基础 + Rust工具库
+• chain-indexer：实现Web3j基础抓取(获取latest block)
+• Kafka producer将blocks/txs/logs推送到本地Kafka
+• metadata-service：实现contract_abi表与上传/查询API
+• Rust基础库开发：创建web3-utils crate，实现基础类型定义、哈希工具函数
+交付物：区块抓取到Kafka + Rust基础工具库
 
-1.3 第3周
-- tx-processor：实现Kafka consumer（consume logs）
-- 实现PostgreSQL基础写入（chain_blocks、chain_transactions）
-- ElasticSearch环境部署（ES + Kibana）
-- 实现tx_index基本写入pipeline
-交付物：Kafka -> tx-processor -> Postgres/ES基本流水线
+第3周 - 数据处理流水线 + Rust ABI解析
+• tx-processor：实现Kafka consumer(consume logs)
+• 实现PostgreSQL基础写入(chain_blocks、chain_transactions)
+• ElasticSearch环境部署(ES + Kibana)
+• Rust ABI解析基础：创建abi-parser crate，实现基础ABI类型定义和解析
+交付物：Kafka -> tx-processor -> Postgres/ES流水线 + ABI解析基础
 
-1.4 第4周
-- Feign & Nacos集成测试：api-gateway -> tx-processor -> metadata-service链路
-- 集成Zipkin/Sleuth（链路追踪）与Prometheus指标导出
-交付物：端到端调用链 & 基本监控Dashboard
+第4周 - 服务集成 + Rust RPC客户端
+• Feign & Nacos集成测试：api-gateway -> tx-processor -> metadata-service链路
+• 集成Zipkin/Sleuth与Prometheus指标导出
+• Rust JSON-RPC客户端：创建rpc-client crate，实现基础JSON-RPC调用
+交付物：端到端调用链 + Rust RPC客户端原型
 
-第2月：ABI解码与Rust引入（第5-8周）
+第2月：Rust深度集成与解码器开发 (第5-8周)
+-------------------------------------------
 
-2.1 第5周
-- Rust crate初始化（web3-indexer-utils）：实现keccak、address校验（unit tests）
-- tx-processor设计事件解码流程 & DLQ机制
-交付物：Rust utils crate，解码流程设计文档
+第5周 - Rust核心工具完善
+• Rust核心库完善：web3-utils中实现keccak、address校验(含单元测试)
+• tx-processor设计事件解码流程 & DLQ机制
+• Rust日志解码器：开始实现log-decoder crate的基础结构
+交付物：Rust工具库完善 + 解码流程设计
 
-2.2 第6周
-- Rust解码器实现decode_log（支持ERC20 Transfer）并编译成动态库（.so / .dll）
-- JNI封装示例（Java调用Rust的简单测试）
-交付物：Rust解码器JNI原型 & Java集成demo
+第6周 - JNI集成与解码器实现
+• Rust解码器核心实现：完成log-decoder对ERC20 Transfer事件的解码
+• 编译为动态库(.so/.dll)，创建JNI接口定义
+• Java端JNI封装和基础测试
+交付物：可工作的Rust解码器 + JNI接口
 
-2.3 第7周
-- tx-processor集成：通过JNI调用Rust解码器，对logs topic的消息进行解码
-- 写入token_transfers与ES event_index
-- 增加错误处理、DLQ重试流程
-交付物：完全工作流的事件解码（Java + Rust），并能查询/tx/{hash}/events
+第7周 - 完整解码流水线
+• tx-processor集成JNI解码器，对logs进行解码
+• 写入token_transfers与ES event_index
+• Rust性能优化：解码器内存管理和性能调优
+交付物：完整的事件解码流水线
 
-2.4 第8周
-- 性能测试：对比Java-only vs Java+Rust解码吞吐，记录数据
-- 文档：解码器接口契约与JNI版本管理策略
-交付物：性能报告与改进建议
+第8周 - 性能测试与优化
+• 性能测试：Java-only vs Java+Rust解码吞吐对比
+• Rust异步RPC改进：优化rpc-client的异步性能
+• 文档：解码器接口契约与版本管理
+交付物：性能报告 + 优化的Rust组件
 
-第3月：多链支持、重组处理、ES强化（第9-12周）
+第3月：多链支持与Rust扩展 (第9-12周)
+--------------------------------------
 
-3.1 第9周
-- 多链配置：Nacos中加入Polygon配置，chain-indexer支持多链拉取与topic命名
-- ES索引策略：按链分索引模板，设置ILM（索引生命周期管理）
-交付物：多链配置 & ES ILM策略
+第9周 - 多链架构支持
+• 多链配置：Nacos中加入Polygon配置
+• ES索引策略：按链分索引模板
+• Rust多链支持：在Rust工具库中添加多链配置支持
+交付物：多链配置 + Rust多链工具
 
-3.2 第10周
-- chain-indexer：引入Rust async RPC client（可替代部分Web3j路径）
-- 实现批量RPC（eth_getLogs / eth_getBlockByNumber批量）
-交付物：Rust RPC客户端在开发分支中工作，Java可通过JNI/HTTP测试
+第10周 - 高性能RPC客户端
+• Rust RPC客户端增强：实现批量RPC调用(eth_getLogs批量获取)
+• chain-indexer：通过JNI集成Rust RPC客户端进行性能测试
+交付物：高性能Rust RPC客户端
 
-3.3 第11周
-- 链重组（reorg）策略实现：确认数逻辑、回滚并重解析机制
-- 实现reindex admin API
-交付物：reorg流程验证 & 重解析工具
+第11周 - 链重组处理
+• 链重组(reorg)策略实现
+• Rust重组处理工具：创建链重组检测和处理的Rust工具
+• 实现reindex admin API
+交付物：reorg流程 + Rust重组工具
 
-3.4 第12周
-- ES聚合/Kibana仪表盘初版（交易量、热门合约、NFT属性分布）
-- 性能调优（Kafka分区、tx-processor并发消费者数、Postgres分区或Timescale配置）
-交付物：Kibana仪表盘 & 性能调整文档
+第12周 - 数据分析与可视化
+• ES聚合/Kibana仪表盘初版
+• Rust数据分析工具：开始创建数据分析的Rust组件
+• 性能调优(Kafka分区、并发消费者等)
+交付物：Kibana仪表盘 + Rust分析工具基础
 
-第4月：实时/GraphQL/高级分析（第13-16周）
+第4月：实时服务与Rust主导组件 (第13-16周)
+-------------------------------------------
 
-4.1 第13周
-- realtime-service（Rust）：实现基本WebSocket订阅推送（newBlocks、txEvents）
-- tx-processor -> realtime-service集成（HTTP推送）
-交付物：WebSocket demo，前端订阅示例
+第13周 - Rust实时服务
+• realtime-service(Rust)：使用axum/tokio实现WebSocket服务器
+• 实现newBlocks、txEvents的基础订阅推送
+• tx-processor -> realtime-service集成
+交付物：Rust WebSocket实时服务
 
-4.2 第14周
-- GraphQL（graphql-java）实现：address聚合查询、分页、history
-- 将部分高读频查询规划为可迁移到Rust的read-optimized服务（候选清单）
-交付物：GraphQL endpoint + 示例queries
+第14周 - GraphQL服务
+• GraphQL实现(使用async-graphql或Juniper)
+• Rust GraphQL服务：将部分查询迁移到Rust实现
+• 性能对比：Java GraphQL vs Rust GraphQL
+交付物：GraphQL endpoint + Rust优化版本
 
-4.3 第15周
-- 开发个人特性（选择的demo）：MEV分析/NFT稀有度/跨链资产追踪
-- 将计算密集部分尽量用Rust实现
-交付物：功能demo
+第15周 - 高级功能开发
+• 开发个人特性(选择的demo)
+• Rust计算密集组件：使用Rust实现MEV分析/NFT稀有度计算等核心算法
+交付物：功能demo + Rust高性能组件
 
-4.4 第16周
-- 文档整理：架构图、部署指南（Helm charts）、OpenAPI、GraphQL schema、Kibana dashboards、运维runbook
-- 回顾迁移优先级：哪些API/服务在下一阶段迁移为Rust独立服务
-交付物：最终交付包（代码、文档、演示脚本）
+第16周 - 项目收尾与总结
+• 文档整理：架构图、部署指南、API文档等
+• Rust组件总结：评估Rust组件性能收益，制定下一阶段迁移计划
+• 回顾和优化建议
+交付物：完整项目交付包 + Rust迁移路线图
+
+技术栈汇总：
+------------
+Java服务：Spring Cloud Alibaba, Web3j, Kafka, PostgreSQL, ElasticSearch
+Rust组件：tokio, axum, serde, web3-utils, abi-parser, rpc-client, log-decoder
+基础设施：Nacos, Sentinel, Zipkin, Prometheus, Grafana, Kibana
+部署环境：Docker, Kubernetes(可选)
