@@ -64,6 +64,47 @@
             "mainClass": "com.web3.indexer.AdminServiceApplication",
             "projectName": "admin-service",
             "cwd": "${workspaceFolder}/java/admin-service"
+        },
+        // ========== Rust 服务配置 ==========
+        {
+            "name": "调试 Rust ABI Decoder",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/rust/target/debug/abi-decoder",
+            "args": [],
+            "cwd": "${workspaceFolder}/rust",
+            "preLaunchTask": "build-abi-decoder",
+            "env": {
+                "RUST_LOG": "debug",
+                "RPC_URL": "http://localhost:8545"
+            }
+        },
+        {
+            "name": "调试 Rust Realtime Service",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/rust/target/debug/realtime-service",
+            "args": [],
+            "cwd": "${workspaceFolder}/rust",
+            "preLaunchTask": "build-realtime-service",
+            "env": {
+                "RUST_LOG": "debug",
+                "DATABASE_URL": "postgres://user:pass@localhost/web3_indexer",
+                "REDIS_URL": "redis://localhost:6379"
+            }
+        },
+        {
+            "name": "运行 Rust 测试",
+            "type": "lldb",
+            "request": "launch",
+            "program": "cargo",
+            "args": [
+                "test",
+                "--workspace",
+                "--nocapture"
+            ],
+            "cwd": "${workspaceFolder}/rust",
+            "console": "integratedTerminal"
         }
     ],
     "compounds": [
@@ -78,6 +119,30 @@
                 "启动 metadata-service",
                 "启动 analytics-service",
                 "启动 admin-service"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "启动所有 Rust 服务",
+            "configurations": [
+                "调试 Rust ABI Decoder",
+                "调试 Rust Realtime Service"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "启动完整系统 (Java + Rust)",
+            "configurations": [
+                "启动 infra-config",
+                "启动 api-gateway",
+                "启动 auth-service",
+                "启动 chain-indexer",
+                "启动 tx-processor",
+                "启动 metadata-service",
+                "启动 analytics-service",
+                "启动 admin-service",
+                "调试 Rust ABI Decoder",
+                "调试 Rust Realtime Service"
             ],
             "stopAll": true
         }

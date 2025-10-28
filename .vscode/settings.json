@@ -1,13 +1,82 @@
 {
+    // ========== Java 配置 ==========
     "java.project.sourcePaths": [
-        "Java/infra-config/src",
-        "Java/api-gateway/src",
-        "Java/auth-service/src",
-        "Java/chain-indexer/src",
-        "Java/tx-processor/src",
-        "Java/metadata-service/src",
-        "Java/analytics-service/src",
-        "Java/admin-service/src"
+        "java/infra-config/src",
+        "java/api-gateway/src",
+        "java/auth-service/src",
+        "java/chain-indexer/src",
+        "java/tx-processor/src",
+        "java/metadata-service/src",
+        "java/analytics-service/src",
+        "java/admin-service/src"
     ],
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.debug.settings.onBuildFailureProceed": true,
+    // ========== Rust 配置 ==========
+    "rust-analyzer.linkedProjects": [
+        "./rust/Cargo.toml"
+    ],
+    "rust-analyzer.check.command": "clippy",
+    "rust-analyzer.checkOnSave": true,
+    "rust-analyzer.cargo.loadOutDirsFromCheck": true,
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.cargo.features": "all",
+    "rust-analyzer.diagnostics.disabled": [
+        "unlinked-file"
+    ],
+    // ========== 通用编辑器配置 ==========
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "editor.inlineSuggest.enabled": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+    // ========== 文件管理配置 ==========
+    "files.autoSave": "onFocusChange",
+    "files.exclude": {
+        "**/target": true,
+        "**/Cargo.lock": true,
+        "**/node_modules": true,
+        "**/build": true,
+        "**/.classpath": true,
+        "**/.project": true,
+        "**/.settings": true,
+        "**/.factorypath": true
+    },
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/node_modules/**": true,
+        "**/build/**": true,
+        "**/.git/**": true
+    },
+    "search.exclude": {
+        "**/target": true,
+        "**/Cargo.lock": true,
+        "**/node_modules": true,
+        "**/build": true
+    },
+    // ========== 调试配置 ==========
+    "debug.internalConsoleOptions": "neverOpen",
+    "debug.onTaskErrors": "showErrors",
+    "debug.javascript.autoAttachFilter": "onlyWithFlag",
+    // ========== 语言特定配置 ==========
+    "[java]": {
+        "editor.defaultFormatter": "redhat.java",
+        "editor.formatOnSave": true
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml"
+    },
+    // ========== 终端配置 ==========
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.env.windows": {
+        "CARGO_TARGET_DIR": "${workspaceFolder}/rust/target"
+    }
 }
