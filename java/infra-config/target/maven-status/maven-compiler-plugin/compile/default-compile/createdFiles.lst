@@ -1,1 +1,5 @@
+com\web3\indexer\common\enums\ResultCode.class
+com\web3\indexer\common\base\BasePage.class
 com\web3\indexer\InfraConfigApplication.class
+com\web3\indexer\common\result\ApiResponse.class
+com\web3\indexer\common\base\BaseRequest.class
