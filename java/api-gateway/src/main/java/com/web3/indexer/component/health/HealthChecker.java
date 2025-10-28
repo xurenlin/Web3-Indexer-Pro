@@ -1,10 +1,10 @@
 package com.web3.indexer.component.health;
 
-import com.web3.indexer.component.health.model.ServiceHealth;
+import com.web3.indexer.component.health.model.ServiceHealthStatus;
 
 public interface HealthChecker {
 
-    public ServiceHealth check();
+    public ServiceHealthStatus check();
 
     public String getServiceName();
 

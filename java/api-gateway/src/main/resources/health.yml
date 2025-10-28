@@ -1,0 +1,178 @@
+# 健康检查专用配置文件
+health:
+  # 全局配置
+  global:
+    enabled: true
+    thread-pool-size: 10
+    default-timeout-ms: 3000
+    cache-duration-ms: 30000
+    verbose-logging: true
+    check-interval-ms: 60000
+    retry-count: 2
+    retry-delay-ms: 1000
+
+  # 服务健康检查配置
+  services:
+    # 数据库服务
+    mysql:
+      service-name: "mysql"
+      enabled: true
+      service-type: "DATABASE"
+      endpoint: "jdbc:mysql://localhost:3307"
+      username: "root"
+      password: "root123"
+      timeout-ms: 2000
+      is-critical: true
+      check-command: "SELECT 1"
+      driver-class: "com.mysql.cj.jdbc.Driver"
+
+    mongodb:
+      service-name: "mongodb"
+      enabled: true
+      service-type: "DATABASE"
+      endpoint: "mongodb://localhost:27017"
+      timeout-ms: 2000
+      is-critical: true
+      database-name: "admin"
+      check-command: "{ ping: 1 }"
+
+    postgres:
+      service-name: "postgres"
+      enabled: true
+      service-type: "DATABASE"
+      endpoint: "jdbc:postgresql://localhost:5432"
+      timeout-ms: 2000
+      is-critical: false
+      check-command: "SELECT 1"
+
+    redis:
+      service-name: "redis"
+      enabled: true
+      service-type: "CACHE"
+      endpoint: "localhost:6379"
+      timeout-ms: 1000
+      is-critical: true
+      check-command: "PING"
+      expected-response: "PONG"
+
+    elasticsearch:
+      service-name: "elasticsearch"
+      enabled: true
+      service-type: "SEARCH"
+      endpoint: "http://localhost:9200"
+      timeout-ms: 3000
+      is-critical: true
+      health-check-path: "/_cluster/health"
+      expected-status-code: 200
+
+    # 消息队列服务
+    kafka:
+      service-name: "kafka"
+      enabled: true
+      service-type: "MESSAGE_QUEUE"
+      endpoint: "localhost:9092"
+      timeout-ms: 2000
+      is-critical: true
+      topic-check-name: "__consumer_offsets"
+
+    zookeeper:
+      service-name: "zookeeper"
+      enabled: true
+      service-type: "COORDINATION"
+      endpoint: "localhost:2181"
+      timeout-ms: 2000
+      is-critical: true
+      check-command: "stat"
+
+    # 监控和可视化服务
+    grafana:
+      service-name: "grafana"
+      enabled: true
+      service-type: "MONITORING"
+      endpoint: "http://localhost:3000"
+      timeout-ms: 3000
+      is-critical: false
+      health-check-path: "/api/health"
+      expected-status-code: 200
+
+    prometheus:
+      service-name: "prometheus"
+      enabled: true
+      service-type: "MONITORING"
+      endpoint: "http://localhost:9090"
+      timeout-ms: 3000
+      is-critical: false
+      health-check-path: "/-/healthy"
+      expected-status-code: 200
+
+    kibana:
+      service-name: "kibana"
+      enabled: true
+      service-type: "MONITORING"
+      endpoint: "http://localhost:5601"
+      timeout-ms: 5000
+      is-critical: false
+      health-check-path: "/api/status"
+      expected-status-code: 200
+
+    # 服务发现和配置中心
+    nacos:
+      service-name: "nacos"
+      enabled: true
+      service-type: "SERVICE_DISCOVERY"
+      endpoint: "http://localhost:8848"
+      timeout-ms: 3000
+      is-critical: true
+      health-check-path: "/nacos/health"
+      expected-status-code: 200
+
+    kafka-ui:
+      service-name: "kafka-ui"
+      enabled: true
+      service-type: "MONITORING"
+      endpoint: "http://localhost:8083"
+      timeout-ms: 2000
+      is-critical: false
+      health-check-path: "/health"
+      expected-status-code: 200
+
+    mongo-express:
+      service-name: "mongo-express"
+      enabled: true
+      service-type: "MONITORING"
+      endpoint: "http://localhost:8084"
+      timeout-ms: 2000
+      is-critical: false
+      health-check-path: "/health"
+      expected-status-code: 200
+
+  # 告警配置
+  alert:
+    enabled: true
+    webhook-url: "http://localhost:8080/alerts/health"
+    critical-services-only: true
+    notification-interval-ms: 300000
+    thresholds:
+      cpu-usage-percent: 80
+      memory-usage-percent: 85
+      disk-usage-percent: 90
+      response-time-ms: 5000
+
+  # 健康检查端点配置
+  endpoint:
+    base-path: "/health"
+    detailed-path: "/health/detailed"
+    enabled: true
+    show-details: true
+    show-components: true
+    auth-required: false
+
+  # 指标收集配置
+  metrics:
+    enabled: true
+    export-interval-ms: 15000
+    collect-metrics:
+      - "response_time_ms"
+      - "error_rate_percent"
+      - "availability_percent"
+      - "throughput_requests_per_second"

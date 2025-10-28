@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  config:
+      import:
+        - "classpath:health.yml"
   application:
     name: api-gateway
   cloud:
@@ -11,3 +14,10 @@ spring:
       config:
         server-addr: localhost:8848
         file-extension: yaml
+  security:
+    basic:
+      enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration

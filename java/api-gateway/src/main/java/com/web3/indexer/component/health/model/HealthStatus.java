@@ -11,8 +11,8 @@ public class HealthStatus {
     private String status; // UP, DOWN, DEGRADED
     private long timestamp;
     private long totalDuration;
-    private Map<String, ServiceHealth> services = new HashMap<>();
+    private Map<String, ServiceHealthStatus> services = new HashMap<>();
     private int upCount;
     private int downCount;
-    private ServiceHealth gateway;
+    private ServiceHealthStatus gateway;
 }
