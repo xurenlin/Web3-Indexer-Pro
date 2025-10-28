@@ -1,1 +1,11 @@
+com\web3\indexer\component\health\model\ServiceHealthStatus.class
+com\web3\indexer\config\SecurityConfig.class
 com\web3\indexer\ApiGatewayApplication.class
+com\web3\indexer\component\health\checker\RedisHealthChecker.class
+com\web3\indexer\component\health\checker\MysqlHealthChecker.class
+com\web3\indexer\config\HealthCheckConfig.class
+com\web3\indexer\service\HealthService.class
+com\web3\indexer\component\health\HealthChecker.class
+com\web3\indexer\component\health\model\HealthStatus.class
+com\web3\indexer\controller\HealthController.class
+com\web3\indexer\service\impl\HealthServiceImpl.class

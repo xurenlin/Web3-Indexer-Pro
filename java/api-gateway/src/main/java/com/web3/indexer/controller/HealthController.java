@@ -16,16 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthController {
 
     @Autowired
-    private HealthService healthService;
+    private HealthService service;
 
     @GetMapping("/allHealth")
     public ApiResponse<HealthStatus> allHealth() {
-        return ApiResponse.success(healthService.allHealth());
+        return ApiResponse.success(service.allHealth());
     }
 
     @GetMapping("/oneHealth/{serviceName}")
     public ApiResponse<ServiceHealthStatus> oneHealth(@PathVariable("serviceName") String serviceName) {
-        return ApiResponse.success(healthService.oneHealth(serviceName));
+        return ApiResponse.success(service.oneHealth(serviceName));
     }
 
 }
