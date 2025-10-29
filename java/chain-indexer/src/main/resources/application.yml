@@ -1,4 +1,7 @@
 spring:
+  config:
+    import:
+      - "classpath:blockchain.yml"
   application:
     name: chain-indexer
   datasource:
@@ -6,17 +9,36 @@ spring:
     username: admin
     password: password123
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate  # 生产环境用 validate，开发可用 update
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          batch_size: 50
-        order_inserts: true
-        order_updates: true
+    # HikariCP 连接池配置
+    hikari:
+      pool-name: BlockchainHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      leak-detection-threshold: 5000
+      auto-commit: true
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    # 下划线转驼峰
+    map-underscore-to-camel-case: true
+    # 日志实现
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      # 插入策略
+      insert-strategy: not_null       # 非空插入
+      update-strategy: not_null       # 非空更新
+      select-strategy: not_null       # 非空查询
+  # mapper 文件位置
+  mapper-locations: classpath*:/mapper/**/*.xml
 
 # Web3 配置
 web3:

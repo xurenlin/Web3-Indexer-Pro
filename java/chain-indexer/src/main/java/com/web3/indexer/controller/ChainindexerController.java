@@ -1,7 +1,7 @@
 package com.web3.indexer.controller;
 
 import com.web3.indexer.common.result.ApiResponse;
-import com.web3.indexer.model.IndexerStatus;
+import com.web3.indexer.model.dto.IndexerStatusResponse;
 import com.web3.indexer.service.ChainindexerService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ public class ChainindexerController {
     public ChainindexerService service;
 
     @RequestMapping("/indexer/status")
-    public ApiResponse<IndexerStatus> indexerStatus() {
-        return ApiResponse.success(service.indexerStatus());
+    public ApiResponse<IndexerStatusResponse> indexerStatus() {
+        return ApiResponse.success(service.indexerStatus(null));
     }
 }

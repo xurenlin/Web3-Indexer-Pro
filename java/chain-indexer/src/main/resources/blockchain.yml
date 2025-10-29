@@ -1,0 +1,26 @@
+blockchain:
+  # 多个链配置
+  chains:
+    # 以太坊主网
+    eth-mainnet:
+      chain-id: "ETH_MAINNET"
+      network-id: 1
+      rpc-url: "https://mainnet.infura.io/v3/your-project-id"
+      ws-url: "wss://mainnet.infura.io/ws/v3/your-project-id"
+      currency-symbol: "ETH"
+      start-block: 18500000
+      target-block: 0
+      enabled: true
+      confirmations: 12
+    
+    # BSC 主网
+    bsc-mainnet:
+      chain-id: "BSC_MAINNET"
+      network-id: 56
+      rpc-url: "https://bsc-dataseed.binance.org"
+      ws-url: "wss://bsc-ws-node.nariox.org:443"
+      currency-symbol: "BNB"
+      start-block: 30000000
+      target-block: 0
+      enabled: true
+      confirmations: 15

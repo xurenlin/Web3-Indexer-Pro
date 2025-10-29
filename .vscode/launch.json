@@ -31,7 +31,7 @@
             "request": "launch",
             "mainClass": "com.web3.indexer.ChainIndexerApplication",
             "projectName": "chain-indexer",
-            "cwd": "${workspaceFolder}/java/chain-indexer"
+            "cwd": "${workspaceFolder}/java/chain-indexer",
         },
         {
             "name": "启动 tx-processor",
