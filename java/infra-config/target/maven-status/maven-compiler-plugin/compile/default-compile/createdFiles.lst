@@ -1,5 +1,12 @@
 com\web3\indexer\common\enums\ResultCode.class
 com\web3\indexer\common\base\BasePage.class
-com\web3\indexer\InfraConfigApplication.class
+com\web3\indexer\common\result\ErrorResponse.class
+com\web3\indexer\common\exception\ValidationException.class
+com\web3\indexer\common\config\ExceptionAutoConfiguration.class
 com\web3\indexer\common\result\ApiResponse.class
 com\web3\indexer\common\base\BaseRequest.class
+com\web3\indexer\common\exception\BusinessException.class
+com\web3\indexer\common\exception\UnauthorizedException.class
+com\web3\indexer\InfraConfigApplication.class
+com\web3\indexer\common\exception\DataNotFoundException.class
+com\web3\indexer\common\exception\GlobalExceptionHandler.class

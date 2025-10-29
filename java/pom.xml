@@ -30,10 +30,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        
         <!-- 依赖版本 -->
         <lombok.version>1.18.30</lombok.version>
-        
         <!-- Spring Boot -->
         <spring-boot.version>3.2.4</spring-boot.version>
         <spring-cloud.version>2023.0.2</spring-cloud.version>

@@ -3,8 +3,8 @@ server:
 
 spring:
   config:
-      import:
-        - "classpath:health.yml"
+    import:
+      - "classpath:health.yml"
   application:
     name: api-gateway
   cloud:
@@ -14,6 +14,18 @@ spring:
       config:
         server-addr: localhost:8848
         file-extension: yaml
+    gateway:
+      discovery:
+        locator:
+          lower-case-service-id: true
+          enabled: true
+      routes:
+        - id: chain-indexer
+          uri: lb://chain-indexer
+          predicates:
+            - Path=/api/chain-indexer/**
+          filters:
+            - StripPrefix=1
   security:
     basic:
       enabled: false
@@ -21,3 +33,9 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.loadbalancer: DEBUG
+    com.alibaba.nacos: DEBUG

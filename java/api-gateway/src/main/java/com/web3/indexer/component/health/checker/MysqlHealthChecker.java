@@ -17,6 +17,9 @@ public class MysqlHealthChecker implements HealthChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(MysqlHealthChecker.class);
 
+    @Value("${health.services.mysql.service-name:mysql}")
+    private String servicename;
+
     // 直接从配置文件中注入参数
     @Value("${health.services.mysql.endpoint:jdbc:mysql://localhost:3306/mysql}")
     private String url;
@@ -28,7 +31,7 @@ public class MysqlHealthChecker implements HealthChecker {
     private String password;
 
     @Value("${health.services.mysql.check-command:SELECT 1}")
-    private String validationQuery;
+    private String checkCommand;
 
     @Override
     public ServiceHealthStatus check() {
@@ -39,7 +42,7 @@ public class MysqlHealthChecker implements HealthChecker {
                 Statement statement = connection.createStatement()) {
 
             // 执行健康检查查询
-            boolean isValid = statement.execute(validationQuery);
+            boolean isValid = statement.execute(checkCommand);
             long duration = System.currentTimeMillis() - startTime;
 
             if (isValid) {
@@ -68,7 +71,7 @@ public class MysqlHealthChecker implements HealthChecker {
 
     @Override
     public String getServiceName() {
-        return "mysql";
+        return servicename;
     }
 
     @Override

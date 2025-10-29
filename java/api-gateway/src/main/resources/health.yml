@@ -50,9 +50,10 @@ health:
       enabled: true
       service-type: "CACHE"
       endpoint: "localhost:6379"
-      timeout-ms: 1000
+      timeout-ms: 2000
       is-critical: true
       check-command: "PING"
+      password: redis123
       expected-response: "PONG"
 
     elasticsearch:
