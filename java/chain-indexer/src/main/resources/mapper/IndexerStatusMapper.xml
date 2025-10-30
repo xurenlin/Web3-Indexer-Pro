@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.web3.indexer.mapper.IndexerStatusMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="IndexerStatusResultMap" type="com.web3.indexer.model.dto.IndexerStatusResponse">
+        <id property="id" column="id" />
+        <result property="chainId" column="chain_id" />
+        <result property="networkId" column="network_id" />
+        <result property="currencySymbol" column="currency_symbol" />
+        <result property="nodeEndpoint" column="node_endpoint" />
+        <result property="latestBlock" column="latest_block" />
+        <result property="isSyncing" column="is_syncing" />
+        <result property="blocksPerSecond" column="blocks_per_second" />
+        <result property="currentChainBlock" column="current_chain_block" />
+        <result property="databaseLatestBlock" column="database_latest_block" />
+        <result property="blocksBehind" column="blocks_behind" />
+        <result property="syncProgress" column="sync_progress" />
+        <result property="totalProcessedBlocks" column="total_processed_blocks" />
+        <result property="uptimeSeconds" column="uptime_seconds" />
+        <result property="lastUpdated" column="last_updated" />
+        <result property="serviceStatus" column="service_status" />
+        <result property="syncMode" column="sync_mode" />
+        <result property="startBlock" column="start_block" />
+        <result property="targetBlock" column="target_block" />
+        <result property="estimatedTimeRemaining" column="estimated_time_remaining" />
+        <result property="errorMessage" column="error_message" />
+        <result property="kafkaStatus" column="kafka_status" />
+        <result property="totalKafkaMessages" column="total_kafka_messages" />
+    </resultMap>
+
+    <!-- 查询索引器状态 -->
+    <select id="getIndexerStatus" parameterType="string" resultMap="IndexerStatusResultMap">
+        SELECT 
+            id,
+            chain_id,
+            network_id,
+            currency_symbol,
+            node_endpoint,
+            latest_block,
+            is_syncing,
+            blocks_per_second,
+            current_chain_block,
+            database_latest_block,
+            blocks_behind,
+            sync_progress,
+            total_processed_blocks,
+            uptime_seconds,
+            last_updated,
+            service_status,
+            sync_mode,
+            start_block,
+            target_block,
+            estimated_time_remaining,
+            error_message,
+            kafka_status,
+            total_kafka_messages
+        FROM indexer_status 
+        WHERE chain_id = #{chainId}
+    </select>
+
+    <!-- 更新索引器状态 -->
+    <update id="updateIndexerStatus" parameterType="com.web3.indexer.model.dto.IndexerStatusResponse">
+        UPDATE indexer_status 
+        SET 
+            chain_id = #{chainId},
+            network_id = #{networkId},
+            currency_symbol = #{currencySymbol},
+            node_endpoint = #{nodeEndpoint},
+            latest_block = #{latestBlock},
+            is_syncing = #{isSyncing},
+            blocks_per_second = #{blocksPerSecond},
+            current_chain_block = #{currentChainBlock},
+            database_latest_block = #{databaseLatestBlock},
+            blocks_behind = #{blocksBehind},
+            sync_progress = #{syncProgress},
+            total_processed_blocks = #{totalProcessedBlocks},
+            uptime_seconds = #{uptimeSeconds},
+            last_updated = #{lastUpdated},
+            service_status = #{serviceStatus},
+            sync_mode = #{syncMode},
+            start_block = #{startBlock},
+            target_block = #{targetBlock},
+            estimated_time_remaining = #{estimatedTimeRemaining},
+            error_message = #{errorMessage},
+            kafka_status = #{kafkaStatus},
+            total_kafka_messages = #{totalKafkaMessages}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 插入索引器状态 -->
+    <insert id="insertIndexerStatus" parameterType="com.web3.indexer.model.dto.IndexerStatusResponse" 
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO indexer_status (
+            chain_id,
+            network_id,
+            currency_symbol,
+            node_endpoint,
+            latest_block,
+            is_syncing,
+            blocks_per_second,
+            current_chain_block,
+            database_latest_block,
+            blocks_behind,
+            sync_progress,
+            total_processed_blocks,
+            uptime_seconds,
+            last_updated,
+            service_status,
+            sync_mode,
+            start_block,
+            target_block,
+            estimated_time_remaining,
+            error_message,
+            kafka_status,
+            total_kafka_messages
+        ) VALUES (
+            #{chainId},
+            #{networkId},
+            #{currencySymbol},
+            #{nodeEndpoint},
+            #{latestBlock},
+            #{isSyncing},
+            #{blocksPerSecond},
+            #{currentChainBlock},
+            #{databaseLatestBlock},
+            #{blocksBehind},
+            #{syncProgress},
+            #{totalProcessedBlocks},
+            #{uptimeSeconds},
+            #{lastUpdated},
+            #{serviceStatus},
+            #{syncMode},
+            #{startBlock},
+            #{targetBlock},
+            #{estimatedTimeRemaining},
+            #{errorMessage},
+            #{kafkaStatus},
+            #{totalKafkaMessages}
+        )
+    </insert>
+
+    <!-- 保存或更新索引器状态（如果存在id就更新，不存在就新增） -->
+    <!-- 保存或更新索引器状态（PostgreSQL 语法，处理自增ID） -->
+    <insert id="saveOrUpdateIndexerStatus" parameterType="com.web3.indexer.model.dto.IndexerStatusResponse"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO indexer_status (
+            chain_id,  <!-- 移除 id 字段 -->
+            network_id,
+            currency_symbol,
+            node_endpoint,
+            latest_block,
+            is_syncing,
+            blocks_per_second,
+            current_chain_block,
+            database_latest_block,
+            blocks_behind,
+            sync_progress,
+            total_processed_blocks,
+            uptime_seconds,
+            last_updated,
+            service_status,
+            sync_mode,
+            start_block,
+            target_block,
+            estimated_time_remaining,
+            error_message,
+            kafka_status,
+            total_kafka_messages
+        ) VALUES (
+            #{chainId},  <!-- 移除 id 值 -->
+            #{networkId},
+            #{currencySymbol},
+            #{nodeEndpoint},
+            #{latestBlock},
+            #{isSyncing},
+            #{blocksPerSecond},
+            #{currentChainBlock},
+            #{databaseLatestBlock},
+            #{blocksBehind},
+            #{syncProgress},
+            #{totalProcessedBlocks},
+            #{uptimeSeconds},
+            #{lastUpdated},
+            #{serviceStatus},
+            #{syncMode},
+            #{startBlock},
+            #{targetBlock},
+            #{estimatedTimeRemaining},
+            #{errorMessage},
+            #{kafkaStatus},
+            #{totalKafkaMessages}
+        ) ON CONFLICT (chain_id) DO UPDATE SET  <!-- 改为基于 chain_id 冲突 -->
+            network_id = EXCLUDED.network_id,
+            currency_symbol = EXCLUDED.currency_symbol,
+            node_endpoint = EXCLUDED.node_endpoint,
+            latest_block = EXCLUDED.latest_block,
+            is_syncing = EXCLUDED.is_syncing,
+            blocks_per_second = EXCLUDED.blocks_per_second,
+            current_chain_block = EXCLUDED.current_chain_block,
+            database_latest_block = EXCLUDED.database_latest_block,
+            blocks_behind = EXCLUDED.blocks_behind,
+            sync_progress = EXCLUDED.sync_progress,
+            total_processed_blocks = EXCLUDED.total_processed_blocks,
+            uptime_seconds = EXCLUDED.uptime_seconds,
+            last_updated = EXCLUDED.last_updated,
+            service_status = EXCLUDED.service_status,
+            sync_mode = EXCLUDED.sync_mode,
+            start_block = EXCLUDED.start_block,
+            target_block = EXCLUDED.target_block,
+            estimated_time_remaining = EXCLUDED.estimated_time_remaining,
+            error_message = EXCLUDED.error_message,
+            kafka_status = EXCLUDED.kafka_status,
+            total_kafka_messages = EXCLUDED.total_kafka_messages
+    </insert>
+
+    <!-- 查询所有链的状态 -->
+    <select id="getAllIndexerStatus" resultMap="IndexerStatusResultMap">
+        SELECT 
+            id,
+            chain_id,
+            network_id,
+            currency_symbol,
+            node_endpoint,
+            latest_block,
+            is_syncing,
+            blocks_per_second,
+            current_chain_block,
+            database_latest_block,
+            blocks_behind,
+            sync_progress,
+            total_processed_blocks,
+            uptime_seconds,
+            last_updated,
+            service_status,
+            sync_mode,
+            start_block,
+            target_block,
+            estimated_time_remaining,
+            error_message,
+            kafka_status,
+            total_kafka_messages
+        FROM indexer_status 
+        ORDER BY id
+    </select>
+
+    <!-- 检查链是否存在 -->
+    <select id="existsByChainId" parameterType="string" resultType="boolean">
+        SELECT COUNT(1) > 0 
+        FROM indexer_status 
+        WHERE chain_id = #{chainId}
+    </select>
+
+    <!-- 根据ID检查记录是否存在 -->
+    <select id="existsById" parameterType="int" resultType="boolean">
+        SELECT COUNT(1) > 0 
+        FROM indexer_status 
+        WHERE id = #{id}
+    </select>
+
+    <!-- 删除索引器状态 -->
+    <delete id="deleteIndexerStatus" parameterType="string">
+        DELETE FROM indexer_status 
+        WHERE chain_id = #{chainId}
+    </delete>
+
+    <!-- 根据ID删除索引器状态 -->
+    <delete id="deleteIndexerStatusById" parameterType="int">
+        DELETE FROM indexer_status 
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

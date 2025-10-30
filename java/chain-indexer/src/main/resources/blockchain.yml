@@ -1,26 +1,31 @@
 blockchain:
-  # 多个链配置
   chains:
     # 以太坊主网
-    eth-mainnet:
+    ETH_MAINNET:
       chain-id: "ETH_MAINNET"
+      chain-name: "Ethereum Mainnet"
       network-id: 1
-      rpc-url: "https://mainnet.infura.io/v3/your-project-id"
-      ws-url: "wss://mainnet.infura.io/ws/v3/your-project-id"
       currency-symbol: "ETH"
-      start-block: 18500000
-      target-block: 0
+      rpc-endpoint: "https://eth.llamarpc.com"
       enabled: true
-      confirmations: 12
+      start-block: 18500000
     
     # BSC 主网
-    bsc-mainnet:
+    BSC_MAINNET:
       chain-id: "BSC_MAINNET"
+      chain-name: "Binance Smart Chain"
       network-id: 56
-      rpc-url: "https://bsc-dataseed.binance.org"
-      ws-url: "wss://bsc-ws-node.nariox.org:443"
       currency-symbol: "BNB"
-      start-block: 30000000
-      target-block: 0
+      rpc-endpoint: "https://bsc-dataseed.binance.org"
       enabled: true
-      confirmations: 15
+      start-block: 30000000
+    
+    # Polygon 主网
+    POLYGON_MAINNET:
+      chain-id: "POLYGON_MAINNET"
+      chain-name: "Polygon Mainnet"
+      network-id: 137
+      currency-symbol: "MATIC"
+      rpc-endpoint: "https://polygon-rpc.com"
+      enabled: true
+      start-block: 45000000

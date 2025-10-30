@@ -2,6 +2,7 @@ package com.web3.indexer.service.impl;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -36,7 +37,8 @@ public class ChainindexerServiceIpml implements ChainindexerService {
     @Override
     public IndexerStatusResponse indexerStatus(String chainId) {
         // 从数据库获取索引器进度,看看是否存在当前链的索引，没有就新增，有就修改状态
-        IndexerStatusResponse status = indexerStatusMapper.getIndexerStatus(chainId);
+        IndexerStatusResponse status = Optional.ofNullable(indexerStatusMapper.getIndexerStatus(chainId))
+                .orElseGet(() -> new IndexerStatusResponse());
         try {
             // 根据chainId获取配置
             ChainConfig chainConfig = blockchainConfig.getChains().get(chainId);
@@ -66,7 +68,7 @@ public class ChainindexerServiceIpml implements ChainindexerService {
             // 计算派生字段
             status.calculateDerivedFields();
             // 保存到数据库
-            indexerStatusMapper.updateIndexerStatus(status);
+            indexerStatusMapper.saveOrUpdateIndexerStatus(status);
         } catch (IOException e) {
             status.setServiceStatus("ERROR");
             status.setErrorMessage("Failed to connect to blockchain node: " + e.getMessage());
@@ -114,5 +116,4 @@ public class ChainindexerServiceIpml implements ChainindexerService {
         private Long lastBlockNumber;
         private long lastUpdateTime = System.currentTimeMillis();
     }
-
 }

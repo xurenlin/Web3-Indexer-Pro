@@ -20,6 +20,8 @@ import lombok.Data;
 @Data
 public class IndexerStatusResponse {
 
+    private Integer id;
+
     /**
      * 区块链网络标识 - 唯一标识不同的区块链网络
      * 格式: {CHAIN}_{NETWORK}，例如: ETH_MAINNET, BSC_TESTNET, POLYGON_MAINNET

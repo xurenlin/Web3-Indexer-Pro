@@ -2,6 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "java",
+            "name": "ChainindexerServiceIpml",
+            "request": "launch",
+            "mainClass": "com.web3.indexer.service.impl.ChainindexerServiceIpml",
+            "projectName": "chain-indexer"
+        },
+        {
             "name": "启动 infra-config",
             "type": "java",
             "request": "launch",
@@ -31,7 +38,7 @@
             "request": "launch",
             "mainClass": "com.web3.indexer.ChainIndexerApplication",
             "projectName": "chain-indexer",
-            "cwd": "${workspaceFolder}/java/chain-indexer",
+            "cwd": "${workspaceFolder}/java/chain-indexer"
         },
         {
             "name": "启动 tx-processor",
@@ -65,7 +72,6 @@
             "projectName": "admin-service",
             "cwd": "${workspaceFolder}/java/admin-service"
         },
-        // ========== Rust 服务配置 ==========
         {
             "name": "调试 Rust ABI Decoder",
             "type": "lldb",
