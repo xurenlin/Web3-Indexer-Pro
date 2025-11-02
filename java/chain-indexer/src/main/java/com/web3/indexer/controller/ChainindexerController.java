@@ -1,5 +1,7 @@
 package com.web3.indexer.controller;
 
+import java.util.List;
+
 import com.web3.indexer.common.result.ApiResponse;
 import com.web3.indexer.model.dto.IndexerStatusResponse;
 import com.web3.indexer.service.ChainindexerService;
@@ -18,7 +20,12 @@ public class ChainindexerController {
     public ChainindexerService service;
 
     @GetMapping("/indexer/status/{chainId}")
-    public ApiResponse<IndexerStatusResponse> indexerStatus(@PathVariable("chainId") String chainId) {
-        return ApiResponse.success(service.indexerStatus(chainId));
+    public ApiResponse<IndexerStatusResponse> indexerStatusByChain(@PathVariable("chainId") String chainId) {
+        return ApiResponse.success(service.indexerStatusByChain(chainId));
+    }
+
+    @GetMapping("/indexer/status/all")
+    public ApiResponse<List<IndexerStatusResponse>> indexerStatusAll() {
+        return ApiResponse.success(service.indexerStatusAll());
     }
 }

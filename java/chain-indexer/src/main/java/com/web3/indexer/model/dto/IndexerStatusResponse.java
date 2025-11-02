@@ -1,5 +1,6 @@
 package com.web3.indexer.model.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -18,9 +19,11 @@ import lombok.Data;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
-public class IndexerStatusResponse {
+public class IndexerStatusResponse implements Serializable {
 
-    private Integer id;
+    private static final long serialVersionUID = 1L;
+
+    private Long id;
 
     /**
      * 区块链网络标识 - 唯一标识不同的区块链网络

@@ -1,6 +1,8 @@
 package com.web3.indexer.service.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +37,7 @@ public class ChainindexerServiceIpml implements ChainindexerService {
     private final long startTime = System.currentTimeMillis();
 
     @Override
-    public IndexerStatusResponse indexerStatus(String chainId) {
+    public IndexerStatusResponse indexerStatusByChain(String chainId) {
         // 从数据库获取索引器进度,看看是否存在当前链的索引，没有就新增，有就修改状态
         IndexerStatusResponse status = Optional.ofNullable(indexerStatusMapper.getIndexerStatus(chainId))
                 .orElseGet(() -> new IndexerStatusResponse());
@@ -116,4 +118,15 @@ public class ChainindexerServiceIpml implements ChainindexerService {
         private Long lastBlockNumber;
         private long lastUpdateTime = System.currentTimeMillis();
     }
+
+    @Override
+    public List<IndexerStatusResponse> indexerStatusAll() {
+        List<IndexerStatusResponse> list = new ArrayList<>();
+        blockchainConfig.getChains().forEach((chainId, chainConfig) -> {
+            IndexerStatusResponse status = indexerStatusByChain(chainId);
+            list.add(status);
+        });
+        return list;
+    }
+
 }

@@ -2,7 +2,7 @@
 ================================
 基础设施健康检查接口√
 服务: api-gateway
-路径: GET /api/v1/health
+路径: GET /api-gateway/health
 阶段: 第1周
 认证: 无
 请求: 无
@@ -32,9 +32,9 @@ Rust环境配置√
 认证: 内部功能
 描述: 从区块链节点持续抓取区块数据，包括区块头、交易列表和事件日志，并将原始数据推送到Kafka消息队列。支持实时追赶模式和断点续传。
 
-区块抓取状态接口
+区块抓取状态接口√
 服务: chain-indexer
-路径: GET /api/v1/internal/indexer/status
+路径: GET /chain-indexer/indexer/status
 阶段: 第2周
 认证: 内部使用
 请求: 无
@@ -43,7 +43,7 @@ Rust环境配置√
 
 Kafka生产统计接口
 服务: chain-indexer
-路径: GET /api/v1/internal/kafka/producer-metrics
+路径: GET /chain-indexer/kafka/producer-metrics
 阶段: 第2周
 认证: 内部使用
 请求: 无
@@ -52,7 +52,7 @@ Kafka生产统计接口
 
 ABI管理接口
 服务: metadata-service
-路径: POST /api/v1/internal/contracts/abi
+路径: POST /metadata-service/contracts/abi
 阶段: 第2周
 认证: 内部使用
 请求: {"address":"0x...","abi":[...],"name":"TestContract"}
